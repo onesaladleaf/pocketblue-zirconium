@@ -16,17 +16,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: [nothing-spacewar, oneplus-sdm845, xiaomi-beryllium, xiaomi-nabu, xiaomi-pipa]
+        device:
+          - name: oneplus-sdm845
+          - name: xiaomi-beryllium
+          - name: xiaomi-nabu
+          - name: xiaomi-nabu
+            tag: latest-samsung
+            xiaomi_nabu_samsung_ufs: true
+          - name: xiaomi-pipa
     env:
-      JUST_ARGS: >
-        base=ghcr.io/zirconium-dev/zirconium
-        base_bootc=quay.io/fedora/fedora-bootc:43
-        branch=latest-arm64
-        tag=latest
-        device=${{ matrix.device }}
-        desktop=zirconium
-        registry=${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
-        rechunk_suffix=-build
+      PB_BASE: ghcr.io/zirconium-dev/zirconium
+      PB_BASE_BOOTC: quay.io/fedora/fedora-bootc:43
+      PB_BRANCH: latest-arm64
+      PB_TAG: ${{ matrix.device.tag || 'latest' }}
+      PB_DEVICE: ${{ matrix.device.name }}
+      PB_DESKTOP: zirconium
+      PB_REGISTRY: ${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
+      PB_RECHUNK_SUFFIX: "-build"
+
+      ARG_XIAOMI_NABU_SAMSUNG_UFS: ${{ matrix.device.xiaomi_nabu_samsung_ufs || 'false' }}
 
     steps:
       - name: Checkout pocketblue repo
@@ -47,11 +55,11 @@ jobs:
 
       - name: Build
         id: build
-        run: just $JUST_ARGS build
+        run: just build --build-arg=xiaomi_nabu_samsung_ufs=${ARG_XIAOMI_NABU_SAMSUNG_UFS}
 
       - name: Rechunk
         id: rechunk
-        run: just $JUST_ARGS rechunk
+        run: just rechunk
 
       - name: Push
         id: push
@@ -59,6 +67,6 @@ jobs:
         env:
           username: ${{ vars.REGISTRY_USERNAME != '' && vars.REGISTRY_USERNAME || github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN != '' && secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-          registry: ${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
-          name: ${{ matrix.device }}-zirconium
-          tag: latest
+          registry: ${{ env.PB_REGISTRY }}
+          name: ${{ matrix.device.name }}-zirconium
+          tag: ${{ env.PB_TAG }}
