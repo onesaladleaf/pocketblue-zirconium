@@ -1,0 +1,63 @@
+name: containers
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'desktops/**'
+
+run-name: "containers: zirconium latest-arm64 ${{ github.event_name == 'push' && format(' | {0}', github.event.head_commit.message) || '' }}"
+
+jobs:
+  desktops:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [nothing-spacewar, oneplus-sdm845, xiaomi-beryllium, xiaomi-nabu, xiaomi-pipa]
+    env:
+      JUST_ARGS: >
+        base=ghcr.io/zirconium-dev/zirconium
+        branch=latest-arm64
+        tag=latest
+        device=${{ matrix.device }}
+        desktop=niri
+        registry=${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
+        rechunk_suffix=-build
+
+    steps:
+      - name: Checkout pocketblue repo
+        uses: actions/checkout@v6
+        with:
+          repository: pocketblue/pocketblue
+
+      - name: Checkout this repo
+        uses: actions/checkout@v6
+        with:
+          path: extra
+
+      - name: Merge desktops
+        run: cp -arT extra/desktops desktops
+
+      - name: Setup just
+        uses: extractions/setup-just@v3
+
+      - name: Build
+        id: build
+        run: just $JUST_ARGS build
+
+      - name: Rechunk
+        id: rechunk
+        run: just $JUST_ARGS rechunk
+
+      - name: Push
+        id: push
+        uses: pocketblue/actions/container-push@main
+        env:
+          username: ${{ vars.REGISTRY_USERNAME != '' && vars.REGISTRY_USERNAME || github.repository_owner }}
+          password: ${{ secrets.REGISTRY_TOKEN != '' && secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+          registry: ${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
+          name: ${{ matrix.device }}-zirconium
+          tag: latest

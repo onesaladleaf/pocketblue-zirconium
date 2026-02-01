@@ -1,0 +1,12 @@
+name: containers (all branches)
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 12 * * *'
+
+jobs:
+  cron_build:
+    secrets: inherit
+    permissions:
+      packages: write
+    uses: ./.github/workflows/containers.yml
