@@ -24,7 +24,7 @@ jobs:
         branch=latest-arm64
         tag=latest
         device=${{ matrix.device }}
-        desktop=niri
+        desktop=zirconium
         registry=${{ vars.REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
         rechunk_suffix=-build
 
