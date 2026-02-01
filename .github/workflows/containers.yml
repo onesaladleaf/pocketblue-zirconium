@@ -20,6 +20,8 @@ jobs:
     env:
       JUST_ARGS: >
         base=ghcr.io/zirconium-dev/zirconium
+        base_bootc=quay.io/fedora/fedora-bootc:43
+        branch=latest-arm64
         tag=latest
         device=${{ matrix.device }}
         desktop=niri
