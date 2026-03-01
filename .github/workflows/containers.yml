@@ -17,8 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         device:
-          - name: oneplus-sdm845
-          - name: xiaomi-beryllium
+          - name: qualcomm-sdm845
           - name: xiaomi-nabu
           - name: xiaomi-nabu
             tag: latest-samsung
